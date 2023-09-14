@@ -39,7 +39,7 @@ func main() {
 				Bits: c.Int("bits"),
 			}
 			for name := range suites {
-				var bo *dummycert.BundleOptions
+				var bo *dummycert.KeyPairOptions
 				switch name {
 				case "rootca":
 					bo = &opts.RootCA
@@ -69,7 +69,7 @@ func main() {
 			Name:     name + "-common-name",
 			Category: name,
 			Usage:    "common name for " + name,
-			Value:    "Fake Cert Chain - " + displayName,
+			Value:    "Dummycert - " + displayName,
 		})
 		cmdCreate.Flags = append(cmdCreate.Flags, &cli.StringSliceFlag{
 			Name:     name + "-dns-name",
