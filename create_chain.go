@@ -14,14 +14,7 @@ import (
 	"time"
 )
 
-func encodePEM(kind string, buf []byte) []byte {
-	return pem.EncodeToMemory(&pem.Block{
-		Type:  kind,
-		Bytes: buf,
-	})
-}
-
-type Bundle struct {
+type keyPair struct {
 	Name           string
 	PrivateKey     *rsa.PrivateKey
 	PrivateKeyPEM  []byte
@@ -31,7 +24,7 @@ type Bundle struct {
 	CertificatePEM []byte
 }
 
-type BundleOptions struct {
+type KeyPairOptions struct {
 	CommonName string
 	NotBefore  time.Time
 	NotAfter   time.Time
@@ -41,28 +34,32 @@ type BundleOptions struct {
 type CreateChainOptions struct {
 	Dir    string
 	Bits   int
-	RootCA BundleOptions
-	Middle BundleOptions
-	Server BundleOptions
-	Client BundleOptions
+	RootCA KeyPairOptions
+	Middle KeyPairOptions
+	Server KeyPairOptions
+	Client KeyPairOptions
 }
 
+// CreateChain creates a dummy certificate chain
 func CreateChain(opts CreateChainOptions) (err error) {
 	defer rg.Guard(&err)
 
 	var (
-		rootca = &Bundle{Name: "rootca"}
-		middle = &Bundle{Name: "middle"}
-		server = &Bundle{Name: "server"}
-		client = &Bundle{Name: "client"}
+		rootca = &keyPair{Name: "rootca"}
+		middle = &keyPair{Name: "middle"}
+		server = &keyPair{Name: "server"}
+		client = &keyPair{Name: "client"}
 
-		bundles = []*Bundle{rootca, middle, server, client}
+		keyPairs = []*keyPair{rootca, middle, server, client}
 	)
 
 	// generate private keys
-	for _, b := range bundles {
+	for _, b := range keyPairs {
 		b.PrivateKey = rg.Must(rsa.GenerateKey(rand.Reader, opts.Bits))
-		b.PrivateKeyPEM = encodePEM("RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(b.PrivateKey))
+		b.PrivateKeyPEM = pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(b.PrivateKey),
+		})
 		rg.Must0(os.WriteFile(filepath.Join(opts.Dir, b.Name+".key.pem"), b.PrivateKeyPEM, 0600))
 	}
 
@@ -71,13 +68,14 @@ func CreateChain(opts CreateChainOptions) (err error) {
 			Subject: pkix.Name{
 				CommonName: opts.RootCA.CommonName,
 			},
-			DNSNames:     opts.RootCA.DNSNames,
-			SerialNumber: big.NewInt(1),
-			NotBefore:    opts.RootCA.NotBefore,
-			NotAfter:     opts.RootCA.NotAfter,
-			KeyUsage:     x509.KeyUsageCertSign,
-			IsCA:         true,
-			MaxPathLen:   2,
+			DNSNames:              opts.RootCA.DNSNames,
+			SerialNumber:          big.NewInt(1),
+			NotBefore:             opts.RootCA.NotBefore,
+			NotAfter:              opts.RootCA.NotAfter,
+			KeyUsage:              x509.KeyUsageCertSign,
+			BasicConstraintsValid: true,
+			IsCA:                  true,
+			MaxPathLen:            2,
 		}
 		rootca.CertificateDER = rg.Must(
 			x509.CreateCertificate(
@@ -96,13 +94,14 @@ func CreateChain(opts CreateChainOptions) (err error) {
 			Subject: pkix.Name{
 				CommonName: opts.Middle.CommonName,
 			},
-			DNSNames:     opts.Middle.DNSNames,
-			SerialNumber: big.NewInt(1),
-			NotBefore:    opts.Middle.NotBefore,
-			NotAfter:     opts.Middle.NotAfter,
-			KeyUsage:     x509.KeyUsageCertSign,
-			IsCA:         true,
-			MaxPathLen:   1,
+			DNSNames:              opts.Middle.DNSNames,
+			SerialNumber:          big.NewInt(1),
+			NotBefore:             opts.Middle.NotBefore,
+			NotAfter:              opts.Middle.NotAfter,
+			KeyUsage:              x509.KeyUsageCertSign,
+			BasicConstraintsValid: true,
+			IsCA:                  true,
+			MaxPathLen:            1,
 		}
 
 		middle.CertificateDER = rg.Must(
@@ -170,13 +169,16 @@ func CreateChain(opts CreateChainOptions) (err error) {
 	}
 
 	// create certificate pem
-	for _, b := range bundles {
-		b.CertificatePEM = encodePEM("CERTIFICATE", b.CertificateDER)
+	for _, b := range keyPairs {
+		b.CertificatePEM = pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: b.CertificateDER,
+		})
 		rg.Must0(os.WriteFile(filepath.Join(opts.Dir, b.Name+".crt.pem"), b.CertificatePEM, 0600))
 	}
 
 	// create full pem
-	for _, b := range []*Bundle{server, client} {
+	for _, b := range []*keyPair{server, client} {
 		rg.Must0(
 			os.WriteFile(
 				filepath.Join(opts.Dir, b.Name+".full-crt.pem"),
