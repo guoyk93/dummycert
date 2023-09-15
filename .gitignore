@@ -25,3 +25,7 @@ go.work
 
 # Generated
 /*.pem
+
+# CI
+/build/
+/dist/
