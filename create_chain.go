@@ -48,15 +48,18 @@ type keyPair struct {
 }
 
 type CertificateOptions struct {
-	CommonName  string
-	NotBefore   time.Time
-	NotAfter    time.Time
-	DNSNames    []string
-	IPAddresses []string
+	CommonName   string
+	SerialNumber int64
+	NotBefore    time.Time
+	NotAfter     time.Time
+	DNSNames     []string
+	IPAddresses  []string
 }
 
 func (co CertificateOptions) Apply(crt *x509.Certificate) {
 	crt.Subject.CommonName = co.CommonName
+	crt.Subject.Organization = []string{"github.com/guoyk93/dummycert"}
+	crt.SerialNumber = big.NewInt(co.SerialNumber)
 	crt.NotBefore = co.NotBefore
 	crt.NotAfter = co.NotAfter
 	crt.DNSNames = cleanDNSNames(co.DNSNames)

@@ -39,22 +39,23 @@ func main() {
 				Bits: c.Int("bits"),
 			}
 			for name := range suites {
-				var bo *dummycert.CertificateOptions
+				var co *dummycert.CertificateOptions
 				switch name {
 				case "rootca":
-					bo = &opts.RootCA
+					co = &opts.RootCA
 				case "middle":
-					bo = &opts.Middle
+					co = &opts.Middle
 				case "server":
-					bo = &opts.Server
+					co = &opts.Server
 				case "client":
-					bo = &opts.Client
+					co = &opts.Client
 				}
-				bo.CommonName = c.String(name + "-common-name")
-				bo.NotBefore = *c.Timestamp(name + "-not-before")
-				bo.NotAfter = *c.Timestamp(name + "-not-after")
-				bo.DNSNames = c.StringSlice(name + "-dns-name")
-				bo.IPAddresses = c.StringSlice(name + "-ip")
+				co.SerialNumber = c.Int64(name + "-serial-number")
+				co.CommonName = c.String(name + "-common-name")
+				co.NotBefore = *c.Timestamp(name + "-not-before")
+				co.NotAfter = *c.Timestamp(name + "-not-after")
+				co.DNSNames = c.StringSlice(name + "-dns-name")
+				co.IPAddresses = c.StringSlice(name + "-ip")
 			}
 			return dummycert.CreateChain(*opts)
 		},
@@ -70,7 +71,14 @@ func main() {
 			Name:     name + "-common-name",
 			Category: name,
 			Usage:    "common name for " + name,
-			Value:    "Dummycert - " + displayName,
+			Value:    "DummyCert - " + displayName,
+		})
+		cmdCreate.Flags = append(cmdCreate.Flags, &cli.Int64Flag{
+			Name:        name + "-serial-number",
+			Category:    name,
+			Usage:       "serial number for " + name,
+			Value:       timeBase.UnixNano(),
+			DefaultText: "current time unix nano",
 		})
 		cmdCreate.Flags = append(cmdCreate.Flags, &cli.StringSliceFlag{
 			Name:     name + "-dns-name",

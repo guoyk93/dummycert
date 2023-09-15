@@ -21,8 +21,9 @@ func TestCreateChain(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	bundleCA := CertificateOptions{
-		CommonName: "noname",
-		NotBefore:  time.Now(),
+		SerialNumber: 1,
+		CommonName:   "noname",
+		NotBefore:    time.Now(),
 	}
 	bundleCA.NotAfter = bundleCA.NotBefore.Add(time.Hour)
 
