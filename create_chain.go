@@ -5,14 +5,37 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/pem"
 	"github.com/guoyk93/rg"
 	"math/big"
+	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
+
+func cleanDNSNames(ss []string) []string {
+	var ret []string
+	for _, s := range ss {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			ret = append(ret, s)
+		}
+	}
+	return ret
+}
+
+func cleanIPAddresses(ss []string) []net.IP {
+	var ret []net.IP
+	for _, s := range ss {
+		p := net.ParseIP(strings.TrimSpace(s))
+		if p != nil {
+			ret = append(ret, p)
+		}
+	}
+	return ret
+}
 
 type keyPair struct {
 	Name           string
@@ -24,20 +47,29 @@ type keyPair struct {
 	CertificatePEM []byte
 }
 
-type KeyPairOptions struct {
-	CommonName string
-	NotBefore  time.Time
-	NotAfter   time.Time
-	DNSNames   []string
+type CertificateOptions struct {
+	CommonName  string
+	NotBefore   time.Time
+	NotAfter    time.Time
+	DNSNames    []string
+	IPAddresses []string
+}
+
+func (co CertificateOptions) Apply(crt *x509.Certificate) {
+	crt.Subject.CommonName = co.CommonName
+	crt.NotBefore = co.NotBefore
+	crt.NotAfter = co.NotAfter
+	crt.DNSNames = cleanDNSNames(co.DNSNames)
+	crt.IPAddresses = cleanIPAddresses(co.IPAddresses)
 }
 
 type CreateChainOptions struct {
 	Dir    string
 	Bits   int
-	RootCA KeyPairOptions
-	Middle KeyPairOptions
-	Server KeyPairOptions
-	Client KeyPairOptions
+	RootCA CertificateOptions
+	Middle CertificateOptions
+	Server CertificateOptions
+	Client CertificateOptions
 }
 
 // CreateChain creates a dummy certificate chain
@@ -65,18 +97,14 @@ func CreateChain(opts CreateChainOptions) (err error) {
 
 	{
 		rootca.Template = &x509.Certificate{
-			Subject: pkix.Name{
-				CommonName: opts.RootCA.CommonName,
-			},
-			DNSNames:              opts.RootCA.DNSNames,
 			SerialNumber:          big.NewInt(1),
-			NotBefore:             opts.RootCA.NotBefore,
-			NotAfter:              opts.RootCA.NotAfter,
 			KeyUsage:              x509.KeyUsageCertSign,
 			BasicConstraintsValid: true,
 			IsCA:                  true,
 			MaxPathLen:            2,
 		}
+		opts.RootCA.Apply(rootca.Template)
+
 		rootca.CertificateDER = rg.Must(
 			x509.CreateCertificate(
 				rand.Reader,
@@ -91,18 +119,13 @@ func CreateChain(opts CreateChainOptions) (err error) {
 
 	{
 		middle.Template = &x509.Certificate{
-			Subject: pkix.Name{
-				CommonName: opts.Middle.CommonName,
-			},
-			DNSNames:              opts.Middle.DNSNames,
 			SerialNumber:          big.NewInt(1),
-			NotBefore:             opts.Middle.NotBefore,
-			NotAfter:              opts.Middle.NotAfter,
 			KeyUsage:              x509.KeyUsageCertSign,
 			BasicConstraintsValid: true,
 			IsCA:                  true,
 			MaxPathLen:            1,
 		}
+		opts.Middle.Apply(middle.Template)
 
 		middle.CertificateDER = rg.Must(
 			x509.CreateCertificate(
@@ -118,18 +141,12 @@ func CreateChain(opts CreateChainOptions) (err error) {
 
 	{
 		server.Template = &x509.Certificate{
-			Subject: pkix.Name{
-				CommonName: opts.Server.CommonName,
-			},
 			SerialNumber: big.NewInt(1),
-			DNSNames:     opts.Server.DNSNames,
-			NotBefore:    opts.Server.NotBefore,
-			NotAfter:     opts.Server.NotAfter,
 			KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-			ExtKeyUsage: []x509.ExtKeyUsage{
-				x509.ExtKeyUsageServerAuth,
-			},
+			ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		}
+		opts.Server.Apply(server.Template)
+
 		server.CertificateDER = rg.Must(
 			x509.CreateCertificate(
 				rand.Reader,
@@ -144,18 +161,12 @@ func CreateChain(opts CreateChainOptions) (err error) {
 
 	{
 		client.Template = &x509.Certificate{
-			Subject: pkix.Name{
-				CommonName: opts.Client.CommonName,
-			},
 			SerialNumber: big.NewInt(1),
-			DNSNames:     opts.Client.DNSNames,
-			NotBefore:    opts.Client.NotBefore,
-			NotAfter:     opts.Client.NotAfter,
 			KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-			ExtKeyUsage: []x509.ExtKeyUsage{
-				x509.ExtKeyUsageClientAuth,
-			},
+			ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		}
+		opts.Client.Apply(client.Template)
+
 		client.CertificateDER = rg.Must(
 			x509.CreateCertificate(
 				rand.Reader,

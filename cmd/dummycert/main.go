@@ -39,7 +39,7 @@ func main() {
 				Bits: c.Int("bits"),
 			}
 			for name := range suites {
-				var bo *dummycert.KeyPairOptions
+				var bo *dummycert.CertificateOptions
 				switch name {
 				case "rootca":
 					bo = &opts.RootCA
@@ -54,6 +54,7 @@ func main() {
 				bo.NotBefore = *c.Timestamp(name + "-not-before")
 				bo.NotAfter = *c.Timestamp(name + "-not-after")
 				bo.DNSNames = c.StringSlice(name + "-dns-name")
+				bo.IPAddresses = c.StringSlice(name + "-ip")
 			}
 			return dummycert.CreateChain(*opts)
 		},
@@ -75,6 +76,11 @@ func main() {
 			Name:     name + "-dns-name",
 			Category: name,
 			Usage:    "dns name for " + name,
+		})
+		cmdCreate.Flags = append(cmdCreate.Flags, &cli.StringSliceFlag{
+			Name:     name + "-ip",
+			Category: name,
+			Usage:    "ip address for " + name,
 		})
 		cmdCreate.Flags = append(cmdCreate.Flags, &cli.TimestampFlag{
 			Name:        name + "-not-before",

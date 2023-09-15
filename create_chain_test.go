@@ -20,7 +20,7 @@ func TestCreateChain(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	bundleCA := KeyPairOptions{
+	bundleCA := CertificateOptions{
 		CommonName: "noname",
 		NotBefore:  time.Now(),
 	}
