@@ -6,7 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/guoyk93/rg"
+	"github.com/yankeguo/rg"
 	"math/big"
 	"net"
 	"os"
@@ -58,7 +58,7 @@ type CertificateOptions struct {
 
 func (co CertificateOptions) Apply(crt *x509.Certificate) {
 	crt.Subject.CommonName = co.CommonName
-	crt.Subject.Organization = []string{"github.com/guoyk93/dummycert"}
+	crt.Subject.Organization = []string{"github.com/yankeguo/dummycert"}
 	crt.SerialNumber = big.NewInt(co.SerialNumber)
 	crt.NotBefore = co.NotBefore
 	crt.NotAfter = co.NotAfter

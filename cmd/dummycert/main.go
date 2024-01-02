@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/guoyk93/dummycert"
 	"github.com/urfave/cli/v2"
+	"github.com/yankeguo/dummycert"
 	"log"
 	"os"
 	"time"
