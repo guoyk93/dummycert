@@ -4,8 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/stretchr/testify/require"
-	"github.com/yankeguo/rg"
 	"io"
 	"net"
 	"net/http"
@@ -13,10 +11,13 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+	"github.com/yankeguo/rg"
 )
 
 func TestCreateChain(t *testing.T) {
-	dir, err := os.MkdirTemp("", "github-guoyk93-dummycert-test-*")
+	dir, err := os.MkdirTemp("", "github-yankeguo-dummycert-test-*")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 

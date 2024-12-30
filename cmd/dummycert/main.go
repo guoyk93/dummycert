@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/urfave/cli/v2"
-	"github.com/yankeguo/dummycert"
 	"log"
 	"os"
 	"time"
+
+	"github.com/urfave/cli/v2"
+	"github.com/yankeguo/dummycert"
 )
 
 func main() {
@@ -114,7 +115,7 @@ func main() {
 	app.Authors = []*cli.Author{
 		{
 			Name:  "GUO YANKE",
-			Email: "hi@guoyk.xyz",
+			Email: "hi@yankeguo.com",
 		},
 	}
 	app.Commands = append(app.Commands, cmdCreate)

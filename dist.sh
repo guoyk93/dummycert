@@ -27,5 +27,5 @@ build freebsd amd64 ""
 
 cd dist
 
-shasum -a 256 *.tar.gz > SHASUM256.txt
-gpg-trezor-hi@guoyk.xyz -ab SHASUM256.txt
+shasum -a 256 *.tar.gz >SHASUM256.txt
+gpg -ab -u 74CD74ED23BE55F18FB8B61F9682F1C631F993B0 SHASUM256.txt
