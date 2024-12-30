@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.2.2 - 2024-12-30
+#### Miscellaneous Chores
+- update author name to yankeguo - (49ff3b9) - GUO YANKE
+
+- - -
+
 ## v0.2.1 - 2024-12-30
 #### Miscellaneous Chores
 - **(deps)** update dependencies - (c5faf33) - GUO YANKE
